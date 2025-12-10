@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - QuickSOS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="{{ url_for('static', filename='video/background.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+    <div class="video-overlay"></div>
+    <div class="container">
+        <h2>Emergency Dashboard</h2>
+        <button onclick="sendSOS()" class="sos-btn">
+            SOS
+        </button>
+        <div class="nav-links">
+            <a href="{{ url_for('logout') }}" class="btn secondary">Logout</a>
+        </div>
+    </div>
+
+    <script>
+    function sendSOS() {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+
+        const sosButton = document.querySelector('.sos-btn');
+        sosButton.textContent = 'Sending...';
+        sosButton.style.opacity = '0.7';
+        sosButton.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                fetch('/sos', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response;
+                })
+                .then(() => {
+                    alert('SOS sent successfully! Emergency contacts have been notified.');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to send SOS. Please try again.');
+                })
+                .finally(() => {
+                    sosButton.textContent = 'SOS';
+                    sosButton.style.opacity = '1';
+                    sosButton.disabled = false;
+                });
+            },
+            function(error) {
+                alert('Error getting location: ' + error.message);
+                sosButton.textContent = 'SOS';
+                sosButton.style.opacity = '1';
+                sosButton.disabled = false;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+</script>
